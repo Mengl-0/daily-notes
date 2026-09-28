@@ -161,21 +161,34 @@ def git_commit():
             check= True,
             capture_output= True,
             text= True,
+            encoding= "utf-8",
+            errors= "replace",
         )
     except subprocess.CalledProcessError as e:
         logger.error(f"git add 失败:{e.stderr.strip()}")
+        return
+    diff = subprocess.run(
+        ["git", "diff", "--cached", "--quiet"],
+        cwd= REPO_PATH,
+        capture_output= True,
+    )
+    if diff.returncode == 0:
+        logger.info("暂存区无变更，无需commit")
+        return
+    elif diff.returncode != 1:
+        logger.error(f"git diff 检查失败， returncode={diff.returncode}")
         return
     result = subprocess.run(
         ["git", "commit", "-m", f"自动更新{today}天气与笔记"],
         cwd= REPO_PATH,
         capture_output= True,
         text= True,
+        encoding= "utf-8",
+        errors= "replace",
     )
     if result.returncode == 0:
         logger.info(f"本地commit完成!文件:{md_filename}")
         logger.warning("需要手动同步")
-    elif "nothing to commit" in (result.stdout + result.stderr):
-        logger.info("没有变更，无需commit")
     else:
         logger.error(f"commit 失败：{result.stderr.strip() or result.stdout.strip()}")
 
