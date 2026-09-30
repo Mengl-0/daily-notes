@@ -14,17 +14,21 @@ LAT = 30.11
 # 地区的经度
 LON = 116.89
 # 本地git仓库完整路径，r 防止转义
-REPO_PATH = r"D:\git\daily-notes"
+REPO_PATH = Path(r"D:\git\daily-notes")
 # 统一使用东八区时间，避免本机时区与API 时区不一致
 TIMEZONE = "Asia/Shanghai"
 # 获取当前时间，格式化为：年/月/日 例如"2026-09-28"
 today = datetime.now(ZoneInfo(TIMEZONE)).strftime("%Y-%m-%d")
 # 拼接笔记名：例如"2026-09-28.md"
 md_filename = f"{today}.md"
+# 笔记存放文件夹
+NOTES_DIR = REPO_PATH / "notes"
 # 拼接完整笔记路径
-md_full_path = Path(REPO_PATH) / md_filename
+md_full_path = NOTES_DIR / md_filename
+# 日志存放文件夹
+LOG_DIR = REPO_PATH / "logs"
 # 日志文件路径
-LOG_FILE = Path(REPO_PATH) / "weather_run.log"
+LOG_FILE = Path(LOG_DIR) / "weather_run.log"
 # 日志保留配置
 LOG_BACKUP_DAYS = 30   # 保留最近30天的日志，更早的自动删除
 LOG_ROTATE_INTERVAL = "D"   # 切割 D=天；H=小时；M=分钟
@@ -40,6 +44,8 @@ REPO_PATH_OBJ = Path(REPO_PATH)
 if not REPO_PATH_OBJ.exists():
     raise FileNotFoundError(f"仓库路径不存在:{REPO_PATH}")
 
+NOTES_DIR.mkdir(parents=True, exist_ok=True)
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 # 日志初始化配置
 # 输出到 文件 + 控制台；每条日志带时间、级别、消息
 logger = logging.getLogger(__name__)
@@ -124,7 +130,7 @@ def get_weather():
 # 读取昨天笔记里的明日计划，作为今天的今日计划
 def read_yesterday_plan():
     yesterday = (datetime.now(ZoneInfo(TIMEZONE)) - timedelta(days=1)).strftime("%Y-%m-%d")
-    yesterday_path = Path(REPO_PATH) / f"{yesterday}.md"
+    yesterday_path = NOTES_DIR / f"{yesterday}.md"
     if not yesterday_path.exists():
         logger.info(f"昨日文件不存在：{yesterday}.md, 今日计划留空")
         return ""
@@ -299,7 +305,7 @@ def git_commit():
         return
     try:
         subprocess.run(
-            ["git", "add", md_filename],
+            ["git", "add", f"notes/{md_filename}"],
             cwd=REPO_PATH,
             check=True,
             capture_output=True,

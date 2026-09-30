@@ -14,13 +14,16 @@ IMG_EXTS ={".png",".jpg",".jpeg",".gif",".webp",".bmp"}
 RECURSIVE = False # 不递归子目录
 UPDATE_MD= True # 更新 .md 引用
 DRY_RUN = False # True只打印不移动，用于预演
-LOG_FILE = REPO_PATH / "image_organizer.log"
+NOTES_DIR = REPO_PATH / "notes"
+LOG_DIR = REPO_PATH / "logs"
+LOG_FILE = Path(LOG_DIR) / "image_organizer.log"
 LOG_BACKUP_DAYS = 30
 LOG_ROTATE_INTERVAL = "D"
 # 限定处理格式为 类似 2026-09-29.md
 DATE_MD_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}\.md$", re.IGNORECASE)
 # ==== ==== ==== ====
 
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 # 日志初始化
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -47,11 +50,11 @@ def get_date_from_file(path:Path) -> str:
     return datetime.fromtimestamp(ts, ZoneInfo(TIMEZONE)).strftime("%Y-%m-%d")
 
 # 寻找当天后缀已用最大编号，返回下一个可用编号
-def next_index(images_dir: Path, date: str, ext : str) -> int:
+def next_index(images_dir: Path, date: str) -> int:
     if not images_dir.exists():
         return 1
     pattern = re.compile(
-        rf"^{re.escape(date)}_(\d+){re.escape(ext)}$",
+        rf"^{re.escape(date)}_(\d+)\.\w+$",
         re.IGNORECASE,
     )
     max_n = 0
@@ -90,7 +93,7 @@ def move_and_rename(img: Path, images_dir: Path) -> tuple[Path, Path]:
     date = get_date_from_file(img)
     ext = img.suffix.lower()
 
-    idx = next_index(images_dir, date, ext)
+    idx = next_index(images_dir, date)
     target = images_dir / f"{date}_{idx:03d}{ext}"
     # 冲突时自动往后找空号
     while target.exists():
@@ -109,12 +112,12 @@ def update_md_references(repo:Path, moves: list[tuple[Path,Path]]):
     # 旧文件名 -> 新相对路径（相对repo）
     replace_map ={}
     for old, new in moves:
-        new_rel = new.relative_to(repo).as_posix()
+        new_rel = "../" + new.relative_to(repo).as_posix()
         replace_map[old.name] = new_rel
     
 #    md_files = list(repo.rglob("*.md")) # 所有.md格式文档
     md_files= [
-        f for f in repo.rglob("*.md")
+        f for f in NOTES_DIR.glob("*.md")
         if DATE_MD_PATTERN.match(f.name)
     ]
 
@@ -157,7 +160,7 @@ def main():
         logger.error(f"仓库路径不存在：{REPO_PATH}")
         raise FileNotFoundError(f"仓库路径不存在：{REPO_PATH}")
 
-    images = collect_images(REPO_PATH, RECURSIVE)
+    images = collect_images(NOTES_DIR, RECURSIVE)
     if not images:
         logger.info("没有待处理的图片")
         logger.info("====== 图片整理结束 ======\n")
