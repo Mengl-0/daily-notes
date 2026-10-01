@@ -112,8 +112,7 @@ def update_md_references(repo:Path, moves: list[tuple[Path,Path]]):
     # 旧文件名 -> 新相对路径（相对repo）
     replace_map ={}
     for old, new in moves:
-        new_rel = "../" + new.relative_to(repo).as_posix()
-        replace_map[old.name] = new_rel
+        replace_map[old_name] = new  # 先存 Path，替换时按 md 位置算相对路径
     
 #    md_files = list(repo.rglob("*.md")) # 所有.md格式文档
     md_files= [
@@ -123,6 +122,7 @@ def update_md_references(repo:Path, moves: list[tuple[Path,Path]]):
 
     if not md_files:
         logger.info("没有符合 YYYY-MM-DD.md 格式的笔记需要检查")
+        return 
     update_count = 0
     for md in  md_files:
         try:
@@ -166,7 +166,7 @@ def main():
         logger.info("====== 图片整理结束 ======\n")
         return
 
-    logger.info(f"发现{len(images)}张图片， 开始处理...\n")
+    logger.info(f"发现{len(images)}张图片， 开始处理...")
 
     moves = []
     for img in images:
