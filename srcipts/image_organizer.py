@@ -1,6 +1,7 @@
 import re
 import shutil
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -112,7 +113,7 @@ def update_md_references(repo:Path, moves: list[tuple[Path,Path]]):
     # 旧文件名 -> 新相对路径（相对repo）
     replace_map ={}
     for old, new in moves:
-        replace_map[old_name] = new  # 先存 Path，替换时按 md 位置算相对路径
+        replace_map[old.name] = new  # 先存 Path，替换时按 md 位置算相对路径
     
 #    md_files = list(repo.rglob("*.md")) # 所有.md格式文档
     md_files= [
@@ -124,7 +125,7 @@ def update_md_references(repo:Path, moves: list[tuple[Path,Path]]):
         logger.info("没有符合 YYYY-MM-DD.md 格式的笔记需要检查")
         return 
     update_count = 0
-    for md in  md_files:
+    for md in md_files:
         try:
             text = md.read_text(encoding="utf-8")
         except UnicodeDecodeError:
@@ -135,7 +136,6 @@ def update_md_references(repo:Path, moves: list[tuple[Path,Path]]):
             pattern = re.compile(
                 rf"(!\[[^\]]*\]\()"          # 组1： ![alt](
                 rf"([^)]*?)"                # 组2：路径前缀（可空）
-                rf"(?:^|/)"                 # 路径分隔或开头
                 rf"({re.escape(old_name)})" # 组3：旧文件名
                 rf"(\))"                    # 组4：)
             )
