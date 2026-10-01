@@ -168,8 +168,7 @@ def build_weather_block(weather):
 def build_markdown(weather, date_str):
     yesterday_plan = read_yesterday_plan()
     plan_section = yesterday_plan if yesterday_plan else ""
-    md = f"""
-{MARKER_TEMPLATE.format(date=date_str)}
+    md = f"""{MARKER_TEMPLATE.format(date=date_str)}
 # {date_str} 学习记录
 
 {build_weather_block(weather)}
