@@ -113,7 +113,9 @@ def update_md_references(repo:Path, moves: list[tuple[Path,Path]]):
     # 旧文件名 -> 新相对路径（相对repo）
     replace_map ={}
     for old, new in moves:
-        replace_map[old.name] = new  # 先存 Path，替换时按 md 位置算相对路径
+        rel = os.path.relpath(new, NOTES_DIR).replace("\\", "/")
+        replace_map[old.name] = rel
+        logger.info(f"映射:{old.name} -> {rel}")
     
 #    md_files = list(repo.rglob("*.md")) # 所有.md格式文档
     md_files= [
