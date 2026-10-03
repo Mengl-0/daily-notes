@@ -137,12 +137,17 @@ def update_md_references(repo:Path, moves: list[tuple[Path,Path]]):
         for old_name, new_rel in replace_map.items():
             pattern = re.compile(
                 rf"(!\[[^\]]*\]\()"          # 组1： ![alt](
-                rf"([^)]*?)"                # 组2：路径前缀（可空）
-                rf"({re.escape(old_name)})" # 组3：旧文件名
-                rf"(\))"                    # 组4：)
+                rf"[^)]*?"                   # 路径前缀（可空）
+                rf"{re.escape(old_name)}"    # 旧文件名
+                rf"(\))"                     # 组2：)
+                ,
+                re.IGNORECASE,               # 大小写不敏感
             )
+            matches = pattern.findall(text)
+            if matches:
+                logger.info(f" [md.name] 匹配{old_name},{len(matches)}处")
             text = pattern.sub(
-                lambda m: f"{m.group(1)}{new_rel}{m.group(4)}",
+                lambda m: f"{m.group(1)}{new_rel}{m.group(2)}",
                 text,
             )
         if text != original:
